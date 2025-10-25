@@ -1,0 +1,1415 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Determinant - Детектор нот</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #ffffff;
+            --bg-secondary: #e6f0ff;
+            --bg-card: #ffffff;
+            --text-primary: #1a1a1a;
+            --text-secondary: #666666;
+            --accent-color: #0066cc;
+            --accent-hover: #0052a3;
+            --border-color: #e0e0e0;
+            --shadow: rgba(0, 0, 0, 0.08);
+            --note-bg: #f0f7ff;
+            --note-border: #cce0ff;
+            --history-bg: #f8f8f8;
+            --success-color: #00a86b;
+            --warning-color: #ff9900;
+            --danger-color: #ff4444;
+            --purple-color: #8e44ad;
+        }
+
+        [data-theme="dark"] {
+            --bg-primary: #1a1a1a;
+            --bg-secondary: #2d2d2d;
+            --bg-card: #2d2d2d;
+            --text-primary: #ffffff;
+            --text-secondary: #cccccc;
+            --accent-color: #4d94ff;
+            --accent-hover: #66a3ff;
+            --border-color: #404040;
+            --shadow: rgba(0, 0, 0, 0.3);
+            --note-bg: #1e3a5f;
+            --note-border: #2d4d7a;
+            --history-bg: #3d3d3d;
+            --success-color: #00cc7a;
+            --warning-color: #ffaa33;
+            --danger-color: #ff6666;
+            --purple-color: #a366c9;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, var(--bg-primary), var(--bg-secondary));
+            color: var(--text-primary);
+            min-height: 100vh;
+            transition: all 0.3s ease;
+        }
+
+        .app-header {
+            background: var(--bg-card);
+            padding: 15px 0;
+            box-shadow: 0 2px 10px var(--shadow);
+            border-bottom: 2px solid var(--accent-color);
+            transition: all 0.3s ease;
+        }
+
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo h1 {
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: var(--accent-color);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .nav-menu {
+            display: flex;
+            gap: 25px;
+        }
+
+        .nav-item {
+            background: none;
+            border: none;
+            color: var(--text-primary);
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            padding: 8px 15px;
+            border-radius: 5px;
+            transition: all 0.3s ease;
+        }
+
+        .nav-item:hover, .nav-item.active {
+            background: var(--accent-color);
+            color: white;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .page {
+            display: none;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        .app-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .app-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 25px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 4px 15px var(--shadow);
+            transition: all 0.3s ease;
+        }
+
+        .card h2 {
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+            color: var(--accent-color);
+            transition: all 0.3s ease;
+        }
+
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .btn {
+            padding: 15px 25px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-record {
+            background: var(--accent-color);
+            color: white;
+        }
+
+        .btn-record:hover {
+            background: var(--accent-hover);
+        }
+
+        .btn-record.recording {
+            background: var(--success-color);
+            animation: pulse 1.5s infinite;
+        }
+
+        .btn-stop {
+            background: var(--text-secondary);
+            color: white;
+        }
+
+        .btn-stop:hover {
+            background: #555555;
+        }
+
+        .btn-save {
+            background: var(--warning-color);
+            color: white;
+        }
+
+        .btn-compare {
+            background: var(--purple-color);
+            color: white;
+        }
+
+        .btn-clear-history {
+            background: var(--danger-color);
+            color: white;
+            padding: 10px 15px;
+            font-size: 0.9rem;
+        }
+
+        .btn:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+        }
+
+        .note-display {
+            text-align: center;
+            padding: 30px;
+            border-radius: 12px;
+            background: var(--note-bg);
+            margin-top: 20px;
+            border: 1px solid var(--note-border);
+            transition: all 0.3s ease;
+        }
+
+        .current-note {
+            font-size: 4rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: var(--accent-color);
+            transition: all 0.3s ease;
+        }
+
+        .current-frequency {
+            font-size: 1.5rem;
+            opacity: 0.8;
+        }
+
+        .history-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .history-list {
+            max-height: 200px;
+            overflow-y: auto;
+            margin-top: 10px;
+        }
+
+        .history-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 15px;
+            background: var(--history-bg);
+            border-radius: 6px;
+            margin-bottom: 8px;
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+        }
+
+        canvas {
+            width: 100%;
+            height: 200px;
+            border-radius: 8px;
+            background: var(--history-bg);
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+        }
+
+        .recordings-list {
+            max-height: 400px;
+            overflow-y: auto;
+            margin-top: 10px;
+        }
+
+        .recording-item {
+            background: var(--history-bg);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+        }
+
+        .recording-item.selected {
+            background: var(--note-bg);
+            border: 2px solid var(--accent-color);
+        }
+
+        .recording-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .action-btn {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        /* Измененная кнопка прослушивания - синий цвет, только иконка */
+        .play-btn {
+            background: var(--accent-color);
+            color: white;
+            padding: 8px 12px;
+            min-width: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .play-btn:hover {
+            background: var(--accent-hover);
+        }
+
+        .play-btn.playing {
+            background: var(--danger-color);
+        }
+
+        .select-btn {
+            background: var(--purple-color);
+            color: white;
+        }
+
+        .delete-btn {
+            background: var(--danger-color);
+            color: white;
+        }
+
+        .save-input {
+            width: 100%;
+            padding: 12px;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-card);
+            color: var(--text-primary);
+            margin-bottom: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 30px;
+            opacity: 0.7;
+        }
+
+        .compare-section {
+            margin-top: 20px;
+        }
+
+        .compare-controls {
+            display: flex;
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        .comparison-results {
+            margin-top: 20px;
+        }
+
+        .comparison-item {
+            background: var(--history-bg);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+        }
+
+        .note-tag {
+            background: #e6ccff;
+            color: var(--purple-color);
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin: 2px;
+            display: inline-block;
+        }
+
+        .selected-count {
+            background: var(--purple-color);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 15px;
+            margin-bottom: 10px;
+            display: inline-block;
+        }
+
+        .playback-section {
+            margin-top: 20px;
+            padding: 15px;
+            background: var(--note-bg);
+            border-radius: 8px;
+            border: 1px solid var(--note-border);
+            transition: all 0.3s ease;
+        }
+
+        .playback-controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+            justify-content: center;
+        }
+
+        .playback-btn {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 5px;
+            background: var(--accent-color);
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .playback-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .analyze-status {
+            text-align: center;
+            padding: 10px;
+            border-radius: 6px;
+            margin-top: 10px;
+            font-size: 0.9rem;
+        }
+
+        .analyze-status.analyzing {
+            background: rgba(0, 102, 204, 0.1);
+            border: 1px solid var(--accent-color);
+            color: var(--accent-color);
+        }
+
+        /* Стили для страницы настроек */
+        .settings-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .theme-selector {
+            display: flex;
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .theme-option {
+            flex: 1;
+            padding: 20px;
+            border: 2px solid var(--border-color);
+            border-radius: 10px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.3s ease;
+            background: var(--bg-card);
+        }
+
+        .theme-option:hover {
+            border-color: var(--accent-color);
+            transform: translateY(-2px);
+        }
+
+        .theme-option.active {
+            border-color: var(--accent-color);
+            background: var(--note-bg);
+        }
+
+        .theme-preview {
+            width: 60px;
+            height: 40px;
+            border-radius: 6px;
+            margin: 0 auto 10px;
+            border: 2px solid var(--border-color);
+        }
+
+        .light-preview {
+            background: linear-gradient(135deg, #ffffff, #e6f0ff);
+        }
+
+        .dark-preview {
+            background: linear-gradient(135deg, #1a1a1a, #2d2d2d);
+        }
+
+        .settings-item {
+            margin-bottom: 25px;
+        }
+
+        .settings-item h3 {
+            margin-bottom: 10px;
+            color: var(--accent-color);
+        }
+
+        .settings-description {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-bottom: 15px;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(0, 168, 107, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(0, 168, 107, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(0, 168, 107, 0); }
+        }
+
+        .accuracy {
+            font-size: 0.9rem;
+            opacity: 0.7;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <header class="app-header">
+        <div class="header-content">
+            <div class="logo">
+                <h1 onclick="showPage('main')">DETERMINANT</h1>
+            </div>
+            <nav class="nav-menu">
+                <button class="nav-item active" onclick="showPage('main')">Главная</button>
+                <button class="nav-item" onclick="showPage('compare')">Сравнение</button>
+                <button class="nav-item" onclick="showPage('settings')">Настройки</button>
+            </nav>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- Главная страница -->
+        <div id="main-page" class="page active">
+            <div class="app-grid">
+                <div class="card">
+                    <h2>🎤 Управление записью</h2>
+                    <div class="controls">
+                        <button id="recordBtn" class="btn btn-record">● Начать запись</button>
+                        <button id="stopBtn" class="btn btn-stop" disabled>■ Остановить</button>
+                    </div>
+
+                    <div class="note-display">
+                        <div id="currentNote" class="current-note">--</div>
+                        <div id="currentFrequency" class="current-frequency">-- Hz</div>
+                        <div id="accuracy" class="accuracy">Точность: --%</div>
+                    </div>
+
+                    <div class="note-history">
+                        <div class="history-header">
+                            <h3>История нот:</h3>
+                            <button id="clearHistoryBtn" class="btn btn-clear-history" disabled>🗑️ Очистить историю</button>
+                        </div>
+                        <div id="historyList" class="history-list"></div>
+                    </div>
+
+                    <div class="save-section">
+                        <h3>💾 Сохранить запись</h3>
+                        <input type="text" id="recordingName" class="save-input" placeholder="Название записи">
+                        <button id="saveBtn" class="btn btn-save" disabled>💾 Сохранить</button>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h2>📊 Визуализация</h2>
+                    <div class="visualization">
+                        <canvas id="waveformCanvas"></canvas>
+                        <canvas id="frequencyCanvas"></canvas>
+                    </div>
+                    
+                    <div id="playbackSection" class="playback-section" style="display: none;">
+                        <div class="note-display">
+                            <div id="playbackNote" class="current-note">--</div>
+                            <div id="playbackFrequency" class="current-frequency">-- Hz</div>
+                            <div id="playbackAccuracy" class="accuracy">Точность: --%</div>
+                        </div>
+                        <div class="playback-controls">
+                            <button id="pauseBtn" class="playback-btn" disabled>⏸️ Пауза</button>
+                            <button id="resumeBtn" class="playback-btn" disabled>▶️ Продолжить</button>
+                            <button id="stopPlaybackBtn" class="playback-btn">⏹️ Стоп</button>
+                        </div>
+                        <div id="analyzeStatus" class="analyze-status"></div>
+                    </div>
+                    
+                    <div class="saved-recordings">
+                        <h3>📁 Сохранённые записи</h3>
+                        <div id="recordingsList" class="recordings-list">
+                            <div class="empty-state">Нет сохранённых записей</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Страница сравнения -->
+        <div id="compare-page" class="page">
+            <div class="card">
+                <h2>🔄 Сравнение записей</h2>
+                
+                <div class="selected-count" id="selectedCount" style="display: none;">
+                    Выбрано записей: <span id="selectedCountValue">0</span>
+                </div>
+
+                <div class="compare-controls">
+                    <button id="compareBtn" class="btn btn-compare" disabled>📊 Сравнить выбранные</button>
+                    <button id="clearSelectionBtn" class="btn btn-stop">🗑️ Очистить выбор</button>
+                </div>
+
+                <div class="recordings-list">
+                    <div id="compareRecordingsList">
+                        <div class="empty-state">Нет сохранённых записей</div>
+                    </div>
+                </div>
+
+                <div id="comparisonResults" class="comparison-results"></div>
+            </div>
+        </div>
+
+        <!-- Страница настроек -->
+        <div id="settings-page" class="page">
+            <div class="settings-grid">
+                <div class="card">
+                    <h2>⚙️ Настройки</h2>
+                    
+                    <div class="settings-item">
+                        <h3>🎨 Выбор темы</h3>
+                        <div class="settings-description">
+                            Выберите preferred цветовую схему приложения
+                        </div>
+                        <div class="theme-selector">
+                            <div class="theme-option active" data-theme="light">
+                                <div class="theme-preview light-preview"></div>
+                                <div>Светлая тема</div>
+                            </div>
+                            <div class="theme-option" data-theme="dark">
+                                <div class="theme-preview dark-preview"></div>
+                                <div>Тёмная тема</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="settings-item">
+                        <h3>🗑️ Управление данными</h3>
+                        <div class="settings-description">
+                            Удалите все сохранённые данные приложения
+                        </div>
+                        <button id="clearAllDataBtn" class="btn btn-clear-history">
+                            🗑️ Удалить все данные
+                        </button>
+                    </div>
+
+                    <div class="settings-item">
+                        <h3>ℹ️ О приложении</h3>
+                        <div class="settings-description">
+                            Determinant - детектор нот для музыкантов<br>
+                            Версия 1.0.0
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class NoteDetector {
+            constructor() {
+                this.audioContext = null;
+                this.analyser = null;
+                this.recording = false;
+                this.dataArray = null;
+                this.bufferLength = null;
+                this.canvasContexts = {};
+                this.noteHistory = [];
+                this.audioChunks = [];
+                this.mediaRecorder = null;
+                this.savedRecordings = JSON.parse(localStorage.getItem('savedRecordings')) || [];
+                this.selectedRecordings = new Set();
+                this.currentlyPlaying = null;
+                this.playbackAnalyser = null;
+                this.playbackSource = null;
+                this.isAnalyzingPlayback = false;
+                this.playbackDataArray = null;
+                this.playbackBufferLength = null;
+                
+                // Загрузка темы из localStorage
+                this.currentTheme = localStorage.getItem('appTheme') || 'light';
+                this.applyTheme(this.currentTheme);
+                
+                this.noteFrequencies = {
+                    'C4': 261.63, 'C#4': 277.18, 'D4': 293.66, 'D#4': 311.13, 'E4': 329.63, 'F4': 349.23, 
+                    'F#4': 369.99, 'G4': 392.00, 'G#4': 415.30, 'A4': 440.00, 'A#4': 466.16, 'B4': 493.88,
+                    'C5': 523.25, 'C#5': 554.37, 'D5': 587.33, 'D#5': 622.25, 'E5': 659.25, 'F5': 698.46
+                };
+                
+                this.initializeElements();
+                this.setupEventListeners();
+                this.initializeCanvases();
+                this.renderSavedRecordings();
+                this.renderCompareRecordings();
+                this.updateThemeSelector();
+            }
+
+            initializeElements() {
+                this.recordBtn = document.getElementById('recordBtn');
+                this.stopBtn = document.getElementById('stopBtn');
+                this.saveBtn = document.getElementById('saveBtn');
+                this.clearHistoryBtn = document.getElementById('clearHistoryBtn');
+                this.clearAllDataBtn = document.getElementById('clearAllDataBtn');
+                this.recordingName = document.getElementById('recordingName');
+                this.currentNoteEl = document.getElementById('currentNote');
+                this.currentFrequencyEl = document.getElementById('currentFrequency');
+                this.accuracyEl = document.getElementById('accuracy');
+                this.historyList = document.getElementById('historyList');
+                this.recordingsList = document.getElementById('recordingsList');
+                this.compareRecordingsList = document.getElementById('compareRecordingsList');
+                this.compareBtn = document.getElementById('compareBtn');
+                this.clearSelectionBtn = document.getElementById('clearSelectionBtn');
+                this.selectedCount = document.getElementById('selectedCount');
+                this.selectedCountValue = document.getElementById('selectedCountValue');
+                this.comparisonResults = document.getElementById('comparisonResults');
+                this.playbackSection = document.getElementById('playbackSection');
+                this.playbackNote = document.getElementById('playbackNote');
+                this.playbackFrequency = document.getElementById('playbackFrequency');
+                this.playbackAccuracy = document.getElementById('playbackAccuracy');
+                this.pauseBtn = document.getElementById('pauseBtn');
+                this.resumeBtn = document.getElementById('resumeBtn');
+                this.stopPlaybackBtn = document.getElementById('stopPlaybackBtn');
+                this.analyzeStatus = document.getElementById('analyzeStatus');
+            }
+
+            setupEventListeners() {
+                this.recordBtn.addEventListener('click', () => this.startRecording());
+                this.stopBtn.addEventListener('click', () => this.stopRecording());
+                this.saveBtn.addEventListener('click', () => this.saveRecording());
+                this.clearHistoryBtn.addEventListener('click', () => this.clearHistory());
+                this.clearAllDataBtn.addEventListener('click', () => this.clearAllData());
+                this.compareBtn.addEventListener('click', () => this.compareRecordings());
+                this.clearSelectionBtn.addEventListener('click', () => this.clearSelection());
+                this.pauseBtn.addEventListener('click', () => this.pausePlayback());
+                this.resumeBtn.addEventListener('click', () => this.resumePlayback());
+                this.stopPlaybackBtn.addEventListener('click', () => this.stopPlayback());
+
+                // Обработчики для выбора темы
+                document.querySelectorAll('.theme-option').forEach(option => {
+                    option.addEventListener('click', (e) => {
+                        const theme = e.currentTarget.getAttribute('data-theme');
+                        this.switchTheme(theme);
+                    });
+                });
+            }
+
+            applyTheme(theme) {
+                document.documentElement.setAttribute('data-theme', theme);
+                this.currentTheme = theme;
+                localStorage.setItem('appTheme', theme);
+            }
+
+            switchTheme(theme) {
+                this.applyTheme(theme);
+                this.updateThemeSelector();
+            }
+
+            updateThemeSelector() {
+                document.querySelectorAll('.theme-option').forEach(option => {
+                    if (option.getAttribute('data-theme') === this.currentTheme) {
+                        option.classList.add('active');
+                    } else {
+                        option.classList.remove('active');
+                    }
+                });
+            }
+
+            clearAllData() {
+                if (confirm('Вы уверены, что хотите удалить ВСЕ данные? Это действие нельзя отменить.')) {
+                    // Останавливаем все процессы
+                    this.stopAllPlayback();
+                    if (this.recording) {
+                        this.stopRecording();
+                    }
+
+                    // Очищаем все данные
+                    this.savedRecordings = [];
+                    this.noteHistory = [];
+                    this.selectedRecordings.clear();
+                    
+                    // Очищаем localStorage
+                    localStorage.removeItem('savedRecordings');
+                    
+                    // Обновляем интерфейс
+                    this.renderSavedRecordings();
+                    this.renderCompareRecordings();
+                    this.updateHistoryDisplay();
+                    
+                    alert('Все данные были успешно удалены.');
+                }
+            }
+
+            initializeCanvases() {
+                this.canvasContexts.waveform = document.getElementById('waveformCanvas').getContext('2d');
+                this.canvasContexts.frequency = document.getElementById('frequencyCanvas').getContext('2d');
+            }
+
+            async startRecording() {
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    
+                    this.audioContext = new AudioContext();
+                    this.analyser = this.audioContext.createAnalyser();
+                    const microphone = this.audioContext.createMediaStreamSource(stream);
+                    
+                    microphone.connect(this.analyser);
+                    this.analyser.fftSize = 2048;
+                    this.bufferLength = this.analyser.frequencyBinCount;
+                    this.dataArray = new Uint8Array(this.bufferLength);
+                    
+                    this.mediaRecorder = new MediaRecorder(stream);
+                    this.audioChunks = [];
+                    
+                    this.mediaRecorder.ondataavailable = (event) => {
+                        this.audioChunks.push(event.data);
+                    };
+                    
+                    this.mediaRecorder.start();
+                    this.recording = true;
+                    this.updateUI();
+                    this.analyzeAudio();
+                    
+                } catch (error) {
+                    console.error('Ошибка доступа к микрофону:', error);
+                }
+            }
+
+            stopRecording() {
+                this.recording = false;
+                if (this.mediaRecorder) this.mediaRecorder.stop();
+                this.updateUI();
+                this.clearCanvases();
+            }
+
+            analyzeAudio() {
+                if (!this.recording) return;
+
+                this.analyser.getByteTimeDomainData(this.dataArray);
+                this.drawWaveform(this.dataArray, this.bufferLength);
+                
+                this.analyser.getByteFrequencyData(this.dataArray);
+                this.drawFrequency(this.dataArray, this.bufferLength);
+                
+                const frequency = this.detectFrequency(this.dataArray, this.bufferLength);
+                
+                if (frequency > 0) {
+                    const noteInfo = this.frequencyToNote(frequency);
+                    this.updateNoteDisplay(noteInfo);
+                }
+                
+                requestAnimationFrame(() => this.analyzeAudio());
+            }
+
+            detectFrequency(dataArray, bufferLength) {
+                if (!this.audioContext) return 0;
+                
+                let maxVolume = 0;
+                let maxIndex = 0;
+                
+                for (let i = 0; i < bufferLength; i++) {
+                    if (dataArray[i] > maxVolume) {
+                        maxVolume = dataArray[i];
+                        maxIndex = i;
+                    }
+                }
+                
+                if (maxVolume < 20) return 0;
+                return maxIndex * this.audioContext.sampleRate / this.analyser.fftSize;
+            }
+
+            frequencyToNote(frequency) {
+                let closestNote = '--';
+                let closestFrequency = 0;
+                let minDifference = Infinity;
+                
+                for (const [note, noteFreq] of Object.entries(this.noteFrequencies)) {
+                    const difference = Math.abs(frequency - noteFreq);
+                    if (difference < minDifference) {
+                        minDifference = difference;
+                        closestNote = note;
+                        closestFrequency = noteFreq;
+                    }
+                }
+                
+                const accuracy = Math.max(0, 100 - (minDifference / closestFrequency * 100));
+                return {
+                    note: closestNote,
+                    frequency: frequency,
+                    accuracy: Math.round(accuracy)
+                };
+            }
+
+            updateNoteDisplay(noteInfo) {
+                this.currentNoteEl.textContent = noteInfo.note;
+                this.currentFrequencyEl.textContent = `${noteInfo.frequency.toFixed(2)} Hz`;
+                this.accuracyEl.textContent = `Точность: ${noteInfo.accuracy}%`;
+                
+                const timestamp = new Date().toLocaleTimeString();
+                this.noteHistory.unshift({
+                    note: noteInfo.note,
+                    frequency: noteInfo.frequency.toFixed(2),
+                    time: timestamp
+                });
+                
+                if (this.noteHistory.length > 10) this.noteHistory.pop();
+                this.updateHistoryDisplay();
+            }
+
+            updateHistoryDisplay() {
+                this.historyList.innerHTML = '';
+                
+                if (this.noteHistory.length === 0) {
+                    this.historyList.innerHTML = '<div class="empty-state">История нот пуста</div>';
+                    this.clearHistoryBtn.disabled = true;
+                    return;
+                }
+                
+                this.clearHistoryBtn.disabled = false;
+                
+                this.noteHistory.forEach(item => {
+                    const historyItem = document.createElement('div');
+                    historyItem.className = 'history-item';
+                    historyItem.innerHTML = `
+                        <span>${item.note}</span>
+                        <span>${item.frequency} Hz</span>
+                        <span>${item.time}</span>
+                    `;
+                    this.historyList.appendChild(historyItem);
+                });
+            }
+
+            clearHistory() {
+                if (this.noteHistory.length > 0 && confirm('Очистить историю нот?')) {
+                    this.noteHistory = [];
+                    this.updateHistoryDisplay();
+                }
+            }
+
+            saveRecording() {
+                if (this.audioChunks.length === 0) return;
+                
+                const name = this.recordingName.value.trim() || `Запись_${new Date().toLocaleString()}`;
+                const audioBlob = new Blob(this.audioChunks, { type: 'audio/wav' });
+                const audioUrl = URL.createObjectURL(audioBlob);
+                
+                const recording = {
+                    id: Date.now().toString(),
+                    name: name,
+                    date: new Date().toLocaleString(),
+                    audioUrl: audioUrl,
+                    notes: [...this.noteHistory]
+                };
+                
+                this.savedRecordings.unshift(recording);
+                this.saveToLocalStorage();
+                this.renderSavedRecordings();
+                this.renderCompareRecordings();
+                
+                this.recordingName.value = '';
+                this.audioChunks = [];
+                this.saveBtn.disabled = true;
+            }
+
+            saveToLocalStorage() {
+                const recordingsMetadata = this.savedRecordings.map(rec => ({
+                    id: rec.id,
+                    name: rec.name,
+                    date: rec.date,
+                    notes: rec.notes
+                }));
+                localStorage.setItem('savedRecordings', JSON.stringify(recordingsMetadata));
+            }
+
+            renderSavedRecordings() {
+                this.recordingsList.innerHTML = '';
+                
+                if (this.savedRecordings.length === 0) {
+                    this.recordingsList.innerHTML = '<div class="empty-state">Нет сохранённых записей</div>';
+                    return;
+                }
+                
+                this.savedRecordings.forEach(recording => {
+                    const recordingItem = document.createElement('div');
+                    recordingItem.className = 'recording-item';
+                    
+                    const notesList = recording.notes.slice(0, 3).map(note => note.note).join(', ');
+                    
+                    recordingItem.innerHTML = `
+                        <div><strong>${recording.name}</strong></div>
+                        <div>${recording.date} | Ноты: ${notesList}${recording.notes.length > 3 ? '...' : ''}</div>
+                        <div class="recording-actions">
+                            <button class="action-btn play-btn" data-id="${recording.id}">▶</button>
+                            <button class="action-btn delete-btn" data-id="${recording.id}">✕</button>
+                        </div>
+                    `;
+                    
+                    this.recordingsList.appendChild(recordingItem);
+                });
+                
+                this.updateMainEventListeners();
+            }
+
+            renderCompareRecordings() {
+                this.compareRecordingsList.innerHTML = '';
+                
+                if (this.savedRecordings.length === 0) {
+                    this.compareRecordingsList.innerHTML = '<div class="empty-state">Нет сохранённых записей</div>';
+                    return;
+                }
+                
+                this.savedRecordings.forEach(recording => {
+                    const recordingItem = document.createElement('div');
+                    recordingItem.className = 'recording-item';
+                    if (this.selectedRecordings.has(recording.id)) {
+                        recordingItem.classList.add('selected');
+                    }
+                    
+                    const notesList = recording.notes.slice(0, 3).map(note => note.note).join(', ');
+                    
+                    recordingItem.innerHTML = `
+                        <div><strong>${recording.name}</strong></div>
+                        <div>${recording.date} | Ноты: ${notesList}${recording.notes.length > 3 ? '...' : ''}</div>
+                        <div class="recording-actions">
+                            <button class="action-btn select-btn" data-id="${recording.id}">${this.selectedRecordings.has(recording.id) ? '✓' : '+'}</button>
+                            <button class="action-btn delete-btn" data-id="${recording.id}">✕</button>
+                        </div>
+                    `;
+                    
+                    this.compareRecordingsList.appendChild(recordingItem);
+                });
+                
+                this.updateCompareEventListeners();
+                this.updateSelectionUI();
+            }
+
+            updateMainEventListeners() {
+                this.recordingsList.querySelectorAll('.play-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const id = e.target.getAttribute('data-id');
+                        this.analyzeRecording(id, e.target);
+                    });
+                });
+                
+                this.recordingsList.querySelectorAll('.delete-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const id = e.target.getAttribute('data-id');
+                        this.deleteRecording(id);
+                    });
+                });
+            }
+
+            updateCompareEventListeners() {
+                this.compareRecordingsList.querySelectorAll('.select-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const id = e.target.getAttribute('data-id');
+                        this.toggleRecordingSelection(id, e.target);
+                    });
+                });
+                
+                this.compareRecordingsList.querySelectorAll('.delete-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const id = e.target.getAttribute('data-id');
+                        this.deleteRecording(id);
+                    });
+                });
+            }
+
+            toggleRecordingSelection(id, button) {
+                if (this.selectedRecordings.has(id)) {
+                    this.selectedRecordings.delete(id);
+                    button.textContent = '+';
+                    button.parentElement.parentElement.classList.remove('selected');
+                } else {
+                    this.selectedRecordings.add(id);
+                    button.textContent = '✓';
+                    button.parentElement.parentElement.classList.add('selected');
+                }
+                this.updateSelectionUI();
+            }
+
+            updateSelectionUI() {
+                const count = this.selectedRecordings.size;
+                this.selectedCountValue.textContent = count;
+                
+                if (count > 0) {
+                    this.selectedCount.style.display = 'block';
+                    this.compareBtn.disabled = false;
+                } else {
+                    this.selectedCount.style.display = 'none';
+                    this.compareBtn.disabled = true;
+                }
+            }
+
+            clearSelection() {
+                this.selectedRecordings.clear();
+                this.renderCompareRecordings();
+                this.comparisonResults.innerHTML = '';
+            }
+
+            compareRecordings() {
+                if (this.selectedRecordings.size < 2) return;
+                
+                const selected = this.savedRecordings.filter(rec => this.selectedRecordings.has(rec.id));
+                this.comparisonResults.innerHTML = '';
+                
+                // Отображение отдельных записей
+                selected.forEach(recording => {
+                    const uniqueNotes = [...new Set(recording.notes.map(note => note.note))];
+                    const notesHtml = uniqueNotes.map(note => 
+                        `<span class="note-tag">${note}</span>`
+                    ).join('');
+                    
+                    const comparisonItem = document.createElement('div');
+                    comparisonItem.className = 'comparison-item';
+                    comparisonItem.innerHTML = `
+                        <div><strong>${recording.name}</strong> (${recording.date})</div>
+                        <div style="margin: 10px 0;">${notesHtml}</div>
+                        <div>Всего нот: ${recording.notes.length}, Уникальных: ${uniqueNotes.length}</div>
+                    `;
+                    this.comparisonResults.appendChild(comparisonItem);
+                });
+
+                // Сводка сравнения
+                const summary = document.createElement('div');
+                summary.className = 'comparison-item';
+                summary.style.background = 'var(--note-bg)';
+                
+                const allNotes = selected.flatMap(rec => rec.notes.map(note => note.note));
+                const uniqueAllNotes = [...new Set(allNotes)];
+                const noteFrequency = {};
+                
+                allNotes.forEach(note => {
+                    noteFrequency[note] = (noteFrequency[note] || 0) + 1;
+                });
+                
+                const commonNotes = Object.entries(noteFrequency)
+                    .filter(([note, count]) => count === selected.length)
+                    .map(([note]) => note);
+                
+                summary.innerHTML = `
+                    <div><strong>📊 Сводка сравнения</strong></div>
+                    <div style="margin: 10px 0;">
+                        <div>Всего записей: ${selected.length}</div>
+                        <div>Всего нот: ${allNotes.length}</div>
+                        <div>Уникальных нот: ${uniqueAllNotes.length}</div>
+                        <div>Общие ноты: ${commonNotes.length > 0 ? commonNotes.join(', ') : 'нет'}</div>
+                    </div>
+                `;
+                
+                this.comparisonResults.appendChild(summary);
+            }
+
+            async analyzeRecording(id, button) {
+                if (this.isAnalyzingPlayback && this.currentlyPlaying && this.currentlyPlaying.id === id) {
+                    this.stopPlayback();
+                    return;
+                }
+                
+                this.stopAllPlayback();
+                
+                const recording = this.savedRecordings.find(rec => rec.id === id);
+                if (!recording || !recording.audioUrl) {
+                    return;
+                }
+                
+                try {
+                    const audioContext = new AudioContext();
+                    this.playbackAnalyser = audioContext.createAnalyser();
+                    this.playbackAnalyser.fftSize = 2048;
+                    this.playbackBufferLength = this.playbackAnalyser.frequencyBinCount;
+                    this.playbackDataArray = new Uint8Array(this.playbackBufferLength);
+                    
+                    const response = await fetch(recording.audioUrl);
+                    const arrayBuffer = await response.arrayBuffer();
+                    const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+                    
+                    this.playbackSource = audioContext.createBufferSource();
+                    this.playbackSource.buffer = audioBuffer;
+                    this.playbackSource.connect(this.playbackAnalyser);
+                    this.playbackAnalyser.connect(audioContext.destination);
+                    
+                    this.isAnalyzingPlayback = true;
+                    this.currentlyPlaying = { id, audio: this.playbackSource, type: 'analyze' };
+                    button.textContent = '⏹';
+                    button.classList.add('playing');
+                    
+                    this.showPlaybackSection(true);
+                    
+                    const analyzePlayback = () => {
+                        if (!this.isAnalyzingPlayback) return;
+                        
+                        this.playbackAnalyser.getByteTimeDomainData(this.playbackDataArray);
+                        this.drawWaveform(this.playbackDataArray, this.playbackBufferLength);
+                        
+                        this.playbackAnalyser.getByteFrequencyData(this.playbackDataArray);
+                        this.drawFrequency(this.playbackDataArray, this.playbackBufferLength);
+                        
+                        const frequency = this.detectFrequency(this.playbackDataArray, this.playbackBufferLength);
+                        
+                        if (frequency > 0) {
+                            const noteInfo = this.frequencyToNote(frequency);
+                            this.updatePlaybackDisplay(noteInfo);
+                        }
+                        
+                        requestAnimationFrame(analyzePlayback);
+                    };
+                    
+                    this.playbackSource.start();
+                    this.playbackSource.onended = () => {
+                        this.stopPlaybackAnalysis();
+                        button.textContent = '▶';
+                        button.classList.remove('playing');
+                    };
+                    
+                    analyzePlayback();
+                    
+                } catch (error) {
+                    this.stopPlaybackAnalysis();
+                    button.textContent = '▶';
+                    button.classList.remove('playing');
+                }
+            }
+
+            updatePlaybackDisplay(noteInfo) {
+                this.playbackNote.textContent = noteInfo.note;
+                this.playbackFrequency.textContent = `${noteInfo.frequency.toFixed(2)} Hz`;
+                this.playbackAccuracy.textContent = `Точность: ${noteInfo.accuracy}%`;
+            }
+
+            stopPlaybackAnalysis() {
+                this.isAnalyzingPlayback = false;
+                
+                if (this.playbackSource) {
+                    try {
+                        this.playbackSource.stop();
+                    } catch (e) {
+                        // Источник уже остановлен
+                    }
+                    this.playbackSource = null;
+                }
+                
+                this.hidePlaybackSection();
+                this.analyzeStatus.textContent = '';
+                this.analyzeStatus.className = 'analyze-status';
+            }
+
+            showPlaybackSection(isAnalyzing) {
+                this.playbackSection.style.display = 'block';
+            }
+
+            hidePlaybackSection() {
+                this.playbackSection.style.display = 'none';
+                this.playbackNote.textContent = '--';
+                this.playbackFrequency.textContent = '-- Hz';
+                this.playbackAccuracy.textContent = 'Точность: --%';
+            }
+
+            pausePlayback() {
+                if (this.currentlyPlaying && this.currentlyPlaying.audio) {
+                    if (this.currentlyPlaying.type === 'analyze') {
+                        // Для анализа пауза не поддерживается, останавливаем полностью
+                        this.stopPlayback();
+                    }
+                }
+            }
+
+            resumePlayback() {
+                // Для анализа возобновление не поддерживается
+            }
+
+            stopPlayback() {
+                this.stopAllPlayback();
+                this.hidePlaybackSection();
+            }
+
+            stopAllPlayback() {
+                // Останавливаем анализ
+                if (this.isAnalyzingPlayback) {
+                    this.stopPlaybackAnalysis();
+                }
+                
+                const playButton = document.querySelector('.play-btn.playing');
+                if (playButton) {
+                    playButton.textContent = '▶';
+                    playButton.classList.remove('playing');
+                }
+                
+                this.currentlyPlaying = null;
+                this.pauseBtn.disabled = true;
+                this.resumeBtn.disabled = true;
+            }
+
+            deleteRecording(id) {
+                if (confirm('Удалить запись?')) {
+                    this.selectedRecordings.delete(id);
+                    this.savedRecordings = this.savedRecordings.filter(rec => rec.id !== id);
+                    this.saveToLocalStorage();
+                    this.renderSavedRecordings();
+                    this.renderCompareRecordings();
+                }
+            }
+
+            drawWaveform(dataArray, bufferLength) {
+                const canvas = this.canvasContexts.waveform.canvas;
+                const width = canvas.width;
+                const height = canvas.height;
+                const context = this.canvasContexts.waveform;
+                
+                // Исправлено: использование конкретных цветов вместо CSS переменных
+                const bgColor = this.currentTheme === 'dark' ? 'rgba(45, 45, 45, 0.8)' : 'rgba(255, 255, 255, 0.8)';
+                const strokeColor = this.currentTheme === 'dark' ? '#4d94ff' : '#0066cc';
+                
+                context.fillStyle = bgColor;
+                context.fillRect(0, 0, width, height);
+                
+                context.lineWidth = 2;
+                context.strokeStyle = strokeColor;
+                context.beginPath();
+                
+                const sliceWidth = width / bufferLength;
+                let x = 0;
+                
+                for (let i = 0; i < bufferLength; i++) {
+                    const v = dataArray[i] / 128.0;
+                    const y = v * height / 2;
+                    
+                    if (i === 0) context.moveTo(x, y);
+                    else context.lineTo(x, y);
+                    
+                    x += sliceWidth;
+                }
+                
+                context.lineTo(width, height / 2);
+                context.stroke();
+            }
+
+            drawFrequency(dataArray, bufferLength) {
+                const canvas = this.canvasContexts.frequency.canvas;
+                const width = canvas.width;
+                const height = canvas.height;
+                const context = this.canvasContexts.frequency;
+                
+                // Исправлено: использование конкретных цветов вместо CSS переменных
+                const bgColor = this.currentTheme === 'dark' ? 'rgba(45, 45, 45, 0.8)' : 'rgba(255, 255, 255, 0.8)';
+                const startColor = this.currentTheme === 'dark' ? '#4d94ff' : '#0066cc';
+                const endColor = this.currentTheme === 'dark' ? '#00cc7a' : '#00a86b';
+                
+                context.fillStyle = bgColor;
+                context.fillRect(0, 0, width, height);
+                
+                const barWidth = (width / bufferLength) * 2.5;
+                let x = 0;
+                
+                for (let i = 0; i < bufferLength; i++) {
+                    const barHeight = dataArray[i] / 2;
+                    const gradient = context.createLinearGradient(0, height - barHeight, 0, height);
+                    gradient.addColorStop(0, startColor);
+                    gradient.addColorStop(1, endColor);
+                    
+                    context.fillStyle = gradient;
+                    context.fillRect(x, height - barHeight, barWidth, barHeight);
+                    x += barWidth + 1;
+                }
+            }
+
+            clearCanvases() {
+                const waveformCanvas = this.canvasContexts.waveform.canvas;
+                const frequencyCanvas = this.canvasContexts.frequency.canvas;
+                this.canvasContexts.waveform.clearRect(0, 0, waveformCanvas.width, waveformCanvas.height);
+                this.canvasContexts.frequency.clearRect(0, 0, frequencyCanvas.width, frequencyCanvas.height);
+            }
+
+            updateUI() {
+                if (this.recording) {
+                    this.recordBtn.disabled = true;
+                    this.recordBtn.classList.add('recording');
+                    this.stopBtn.disabled = false;
+                    this.saveBtn.disabled = false;
+                } else {
+                    this.recordBtn.disabled = false;
+                    this.recordBtn.classList.remove('recording');
+                    this.stopBtn.disabled = true;
+                    this.currentNoteEl.textContent = '--';
+                    this.currentFrequencyEl.textContent = '-- Hz';
+                    this.accuracyEl.textContent = 'Точность: --%';
+                }
+            }
+        }
+
+        // Навигация между страницами
+        function showPage(pageId) {
+            document.querySelectorAll('.page').forEach(page => {
+                page.classList.remove('active');
+            });
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            
+            document.getElementById(pageId + '-page').classList.add('active');
+            event.target.classList.add('active');
+            
+            // Останавливаем воспроизведение при смене страницы
+            if (window.app) {
+                window.app.stopPlayback();
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            window.app = new NoteDetector();
+        });
+    </script>
+</body>
+</html>
